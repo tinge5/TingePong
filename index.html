@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.10.5/brython.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+            background-color: rgb(10, 10, 10);
+        }
+        canvas {
+            border: 1px solid rgb(105, 4, 4);
+            background-color: rgb(14, 13, 13);
+        }
+    </style>
+</head>
+<body onload="brython()">
+    <h1 style ="color: grey;">Welcome to Turners Pong Game!</h1>
+    <canvas id = "pong" width="1000" height="500"></canvas>
+
+    <script type="text/python">
+        from browser import document, window
+
+        canvas = document["pong"]
+        ctx = canvas.getContext("2d")
+        resetCalled = False
+        wait = False
+        sCpu = 0
+        pause = True
+        pause2 = False
+        dx, dy = 0, 0
+        p1Score = 0
+        #ball properties
+        ballR = 10
+        ball_speedx = 6.5
+        ball_speedy = 5
+        ball = {"x": canvas.width/2, "y": canvas.height/2, "dx": ball_speedx, "dy": ball_speedy }
+        def intro():
+            ctx.font = "30px Roman"
+            ctx.fillStyle = "gray";
+            ctx.fillText("Use arrows to move. 'p' to pause 'r' to resume\start!", 200, 50)
+        def drawBall():
+            ctx.beginPath()
+            ctx.fillStyle = "red"
+            ctx.arc(ball["x"], ball["y"], ballR, 0, 2 * window.Math.PI)
+            ctx.fill()
+            ctx.closePath()    
+        def play():
+            global pause
+            global pause2
+            pause = False
+            pause2 = False
+        def over():
+          global wait
+          wait = True
+        def restart():
+          global wait
+          global p1Score
+          global sCpu
+          p1Score = 0
+          sCpu = 0
+          wait = False
+        
+        #paddle properties
+        p1_width = 15
+        p1_length = 100
+        paddleSpeed = -25 
+        cpuPaddleSpeed = -10
+        p1 = {"x": canvas.width-p1_width, "y": canvas.height/2 - 50}
+        cpu = {"x": 0, "y": canvas.height/2 - 50}
+
+        def drawp1():
+            ctx.beginPath()
+            ctx.rect(p1["x"], p1["y"], p1_width, p1_length)
+            ctx.fillStyle = "blue"
+            ctx.fill()
+            ctx.closePath()
+        def rules():
+            ctx.font = "20x Roman";
+            ctx.fillStyle = "green"
+            ctx.fillText("First to 5 Wins!", canvas.width/2 - 87, 450)
+        def movegoal():
+            goal["x"] += 5
+            print("hello")
+        drawp1()
+        def drawcpu():
+            ctx.beginPath()
+            ctx.rect(cpu["x"],cpu["y"], p1_width,p1_length)
+            ctx.fillStyle = "yellow"
+            ctx.fill()
+            ctx.closePath()
+        drawcpu()
+        def cpuScore():
+            global sCpu
+            global p1Score
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "blue"
+            ctx.fillText(f"Cpu: {sCpu}",50,20)
+            ctx.font = "20px Arial";
+            ctx.fillText(f"P1: {p1Score}",canvas.width-100,20)
+        #ball movement
+        def MoveBall():
+            global sCpu
+            global p1Score, dx, dy
+            global resetCalled
+            ball["x"] += ball["dx"]
+            ball["y"] += ball["dy"]
+            if ball["y"] - ballR == 0 or ball["y"] + ballR == canvas.height: #bounces off bottom of canvas
+                ball["dy"] = -ball["dy"]
+            
+            if ball["x"] + ballR >= p1["x"]: 
+                if ball["y"] - ballR >= p1["y"] and ball["y"] + ballR <= p1["y"] + p1_length: 
+                    ball["dx"] = -ball["dx"]
+            
+            if ball["x"] - ballR <= cpu["x"] + p1_width:
+                if ball["y"] - ballR >= cpu["y"] and ball["y"] + ballR <= cpu["y"] + p1_length: 
+                    ball["dx"] = -ball["dx"]
+            if ball["x"] >= canvas.width: 
+                dy = ball["dy"]
+                dx = ball["dx"]
+                sCpu+=1
+                if sCpu == 5:
+                  over()
+                resetBall()
+                
+               
+            if ball["x"] <= 0: 
+               dy = ball["dy"]
+               dx = ball["dx"]    
+               p1Score+=1
+               if p1Score == 5:
+                over()
+               resetBall()
+               
+               
+        def resetBall():
+            global resetCalled
+            ball["x"] = canvas.width/2
+            ball["y"] = canvas.height/2
+            ball["dx"] = 0
+            ball["dy"] = 0
+            resetCalled = True
+        def resumeBall():
+            global resetCalled, dx, dy
+            resetCalled = False
+            window.console.log("dx: ", dx, " dy: ", dy, "ballx: ", ball["dx"], "bally: ", ball["dy"])
+            ball["dy"] = dy * -1
+            ball["dx"] = dx * -1
+        
+            
+
+        #PaddleMovement
+        def movep1Up():
+            if p1["y"] > 0:         
+                p1["y"] += paddleSpeed
+        def movep1down():
+            if p1["y"] < canvas.height - p1_length:         
+                p1["y"] -= paddleSpeed
+
+        def moveCpu():
+            global cpuPaddleSpeed
+            if cpu["y"] <= 0 or cpu["y"] >= canvas.height - p1_length:              
+                cpu["y"] -= cpuPaddleSpeed
+                cpuPaddleSpeed *= -1
+            else:
+                cpu["y"] += cpuPaddleSpeed
+        def paused():
+            global pause2
+            ctx.beginPath()
+            ctx.rect(canvas.width/2 - 20, canvas.height/2-100, 20, 200)
+            ctx.rect(canvas.width/2 + 20, canvas.height/2-100, 20, 200)
+            ctx.fillStyle = "gray"
+            ctx.fill()
+            ctx.closePath()
+            window.console.log("paused")
+        def pa():
+            global pause2
+            pause2 = True
+
+        def on_keydown(event):
+            if event.key == "ArrowUp":
+                movep1Up()
+            if event.key == "ArrowDown": 
+                movep1down()
+            if event.key == "r":
+                play()
+            if event.key == "p":
+                pa()
+            if event.key == "x":
+                restart()
+
+
+        document.bind("keydown", on_keydown)
+        def game():
+            global wait
+            global pause2
+            global pause
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            if wait:
+              ctx.font = "70x Arial";
+              ctx.fillStyle = "red"
+              ctx.fillText("Game over press 'x' to restart", canvas.width/2-120, canvas.height/2)
+              return
+            drawcpu()
+            cpuScore()
+            drawBall()
+            drawp1()
+            if pause:
+                intro()
+                rules()
+                return
+            if pause2:
+                paused()
+                return
+            MoveBall()
+            moveCpu()
+            
+            if resetCalled:
+                window.setTimeout(resumeBall, 1000)
+        window.setInterval(game, 1000 / 60)
+    </script>
+</body>
+</html>
