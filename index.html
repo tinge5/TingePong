@@ -26,6 +26,7 @@
         canvas = document["pong"]
         ctx = canvas.getContext("2d")
         resetCalled = False
+        resetTimer = None
         wait = False
         sCpu = 0
         pause = True
@@ -107,7 +108,7 @@
             global resetCalled
             ball["x"] += ball["dx"]
             ball["y"] += ball["dy"]
-            if ball["y"] - ballR == 0 or ball["y"] + ballR == canvas.height: #bounces off bottom of canvas
+            if ball["y"] - ballR <= 0 or ball["y"] + ballR >= canvas.height: #bounces off top and bottom of canvas
                 ball["dy"] = -ball["dy"]
             
             if ball["x"] + ballR >= p1["x"]: 
@@ -136,15 +137,18 @@
                
                
         def resetBall():
-            global resetCalled
+            global resetCalled, resetTimer
             ball["x"] = canvas.width/2
             ball["y"] = canvas.height/2
             ball["dx"] = 0
             ball["dy"] = 0
             resetCalled = True
+            if resetTimer is None:
+                resetTimer = window.setTimeout(resumeBall, 1000)
         def resumeBall():
-            global resetCalled, dx, dy
+            global resetCalled, resetTimer, dx, dy
             resetCalled = False
+            resetTimer = None
             window.console.log("dx: ", dx, " dy: ", dy, "ballx: ", ball["dx"], "bally: ", ball["dy"])
             ball["dy"] = dy * -1
             ball["dx"] = dx * -1
@@ -216,9 +220,6 @@
                 return
             MoveBall()
             moveCpu()
-            
-            if resetCalled:
-                window.setTimeout(resumeBall, 1000)
         window.setInterval(game, 1000 / 60)
     </script>
 </body>
